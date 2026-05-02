@@ -101,8 +101,8 @@ class MusicList:
     def __get_url_type__(self, url: str) -> str | None:
         """
         Gets the type of URL returning the following:
-        - **youtube-song/playlist**: A youtube song or a playlist
-        - **spotify-song/playlist**: A spotify song or a playlist
+        - **youtube-song**: A youtube song or a 
+        - **spotify-song**: A spotify song or a 
         - None: Not a valid URL
 
         Returns:
@@ -110,9 +110,7 @@ class MusicList:
         """
         PATTERNS = {
             "spotify-song":    re.compile(r'https?://open\.spotify\.com/track/[A-Za-z0-9]+'),
-            "spotify-playlist": re.compile(r'https?://open\.spotify\.com/playlist/[A-Za-z0-9]+'),
             "youtube-song":    re.compile(r'https?://(www\.)?(youtube\.com/watch\?v=|youtu\.be/)[A-Za-z0-9_-]+'),
-            "youtube-playlist": re.compile(r'https?://(www\.)?youtube\.com/playlist\?list=[A-Za-z0-9_-]+'),
         }
 
         for url_type, pattern in PATTERNS.items():
@@ -184,7 +182,8 @@ class MusicList:
                     genre=metadata["genre"],
                     year=metadata["year"],
                     track=metadata["track"]
-                ))
+                )
+            )
             
             # Add track count if present in metadata
             if not metadata["track"] is None:
