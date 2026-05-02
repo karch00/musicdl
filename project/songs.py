@@ -1,3 +1,6 @@
+from typing import Literal
+import requests
+
 
 class Song:
     """
@@ -6,7 +9,7 @@ class Song:
     def __init__(
         self, 
         url: str,
-        url_type: Literal[None, "youtube-song", "youtube-playlist", "spotify-song", "spotify-playlist"],
+        url_type: Literal[None, "youtube-song", "spotify-song"],
         title: str|None = None, 
         artist: str|None = None, 
         album: str|None = None, 
@@ -24,3 +27,40 @@ class Song:
         self.genre = genre
         self.year = year
         self.track = track
+    
+    def __get_spotify_metadata__(self, session: requests.Session, bearer_token: str) -> dict[str, str] | None:
+        """
+        Gets metadata from the spotify link and returns the Title and Art album cover.
+
+        Params:
+        session (requests.Session): Parent session
+        bearer_token (str): Spotify bearing token
+
+        Returns:
+        out (dict[str, str]): Title and art cover URL
+        """
+        # Set headers and URL
+        HEADERS = {
+            f"Authorization: Bearer {bearer_token}"
+        }
+        url_id = self.url.strip("https://open.spotify.com/track/")
+        URL = f"https://api.spotify.com/v1/tracks/{url_id}"
+        
+        # Get request and check for ok status
+        # Return None if not 200
+        r = session.get(url=URL, headers=HEADERS)
+        if not r.ok:
+            return None
+
+        # Get title and album art
+        r_data = r.json()
+        title = r_data["name"]
+        art = r_data["album"]["images"][0]["url"]
+
+        # Return metadata
+        return {"title": title, "art": art}
+    
+
+
+    def download(self, session: requests.Session, bearer_token: str) -> None:
+        raise NotImplementedError
