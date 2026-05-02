@@ -30,14 +30,14 @@ class Song:
     
     def __get_spotify_metadata__(self, session: requests.Session, bearer_token: str) -> dict[str, str] | None:
         """
-        Gets metadata from the spotify link and returns the Title and Art album cover.
+        Gets metadata from the spotify link and returns the Title, Artist and Art album cover.
 
         Params:
         session (requests.Session): Parent session
         bearer_token (str): Spotify bearing token
 
         Returns:
-        out (dict[str, str]): Title and art cover URL
+        out (dict[str, str]): Title, Artist and art cover URL. None if request error
         """
         # Set headers and URL
         HEADERS = {
@@ -49,16 +49,18 @@ class Song:
         # Get request and check for ok status
         # Return None if not 200
         r = session.get(url=URL, headers=HEADERS)
-        if not r.ok:
+        if not r.ok or "error" in r.json():
             return None
 
         # Get title and album art
         r_data = r.json()
         title = r_data["name"]
-        art = r_data["album"]["images"][0]["url"]
+        artist = r_data["artists"][0]["name"]
+        cover = r_data["album"]["images"][0]["url"]
 
         # Return metadata
-        return {"title": title, "art": art}
+        return {"title": title, "artist": artist, "cover": cover}
+
     
 
 
