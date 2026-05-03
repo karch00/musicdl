@@ -1,5 +1,6 @@
 from typing import Literal
 import requests
+import re
 
 
 class Song:
@@ -60,7 +61,32 @@ class Song:
 
         # Return metadata
         return {"title": title, "artist": artist, "cover": cover}
+    
+    def __query_youtube__(self, title: str, artist: str, session: requests.Session) -> str | None:
+        """
+        Queries youtube and searches for the title to return the corresponding URL
 
+        Params:
+        title (str): The title to query
+
+        Returns:
+        out (str): Corresponding URL, None if query error
+        """
+        # Init variables
+        PATTERN=re.compile(r"\/watch\?v=.{11}")
+        title_list = title.split(" ")
+        artist_list = artist.split(" ")
+
+        # Search query
+        # Return None if request error
+        r = session.get(url=f"https://www.youtube.com/results?search_query={'+'.join(title_list)}+{'+'.join(artist_list)}")
+        if not r.ok:
+            return None
+
+        # Get only first match, most relevant
+        url_component = PATTERN.search(r.content.decode())[0]
+
+        return f"https://youtube.com{url_component}"
     
 
 

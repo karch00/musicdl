@@ -109,8 +109,8 @@ class MusicList:
         type (str|None): Type of the url, None if invalid
         """
         PATTERNS = {
-            "spotify-song":    re.compile(r'https?://open\.spotify\.com/track/[A-Za-z0-9]+'),
-            "youtube-song":    re.compile(r'https?://(www\.)?(youtube\.com/watch\?v=|youtu\.be/)[A-Za-z0-9_-]+'),
+            "spotify-song": re.compile(r'https?://open\.spotify\.com/track/[A-Za-z0-9]+'),
+            "youtube-song": re.compile(r'https?://(www\.)?(youtube\.com/watch\?v=|youtu\.be/)[A-Za-z0-9_-]+'),
         }
 
         for url_type, pattern in PATTERNS.items():
