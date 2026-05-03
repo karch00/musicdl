@@ -1,7 +1,18 @@
 from typing import Literal
 import requests
 import re
+import yt_dlp
+import os
 
+class FailedSongDownloadError:
+    def __init__(self, message: str|None = None):
+        self.message = message
+class FailedCoverDownloadError:
+    def __init__(self, message: str|None = None):
+        self.message = message
+class FailedMetadataError:
+    def __init__(self, message: str|None = None):
+        self.message = message
 
 class Song:
     """
@@ -31,7 +42,8 @@ class Song:
     
     def __get_spotify_metadata__(self, session: requests.Session, bearer_token: str) -> dict[str, str] | None:
         """
-        Gets metadata from the spotify link and returns the Title, Artist and Art album cover.
+        Gets metadata from the spotify link and returns the Title, Artist and Art album cover for
+        more accurate search results from youtube.
 
         Params:
         session (requests.Session): Parent session
@@ -87,8 +99,110 @@ class Song:
         url_component = PATTERN.search(r.content.decode())[0]
 
         return f"https://youtube.com{url_component}"
-    
 
+    def __get_download_path__(self, base_path: str) -> str:
+        """
+        Returns the download path directory tree for song/cover to download
 
-    def download(self, session: requests.Session, bearer_token: str) -> None:
-        raise NotImplementedError
+        Params:
+        base_path (str): Parent path
+
+        Returns:
+        out (str): Full directory tree from base_path  
+        """
+        # /artist/album/song ; artist and album can be missing practically, but not recommended!
+        base_output_path = base_output_path.replace("\\", "/")
+        output_path = f"{base_output_path}{'/' if base_output_path[-1] != '/' else ''}"
+        if self.artist:
+            output_path += f"/{self.artist.replace(' ', '_')}"
+        if self.album:
+            output_path += f"/{self.album.replace(' ', '_')}"
+        if not self.artist and not self.album:
+            output_path += f"/{self.title.replace(' ', '_')}"
+        
+        return output_path
+
+    def download(self, base_output_path: str, song_format: Literal["mp3", "flac"], session: requests.Session, bearer_token: str|None = None) -> None|FailedSongDownloadError:
+        """
+        Downloads the song and its cover image onto the same 'Artist/Album/' directory
+
+        Params:
+        base_output_path (str): base output directory path
+        song_format (str): format: mp3 or flac
+        session (requests.Session): The session to make requests from
+        bearer_token (str|None): Spotify bearer token, None if no succesful spotify API bind or Spotify credentials not present
+        """
+        # Get spotify metadata
+        # Change artist and cover to queried if not set by custom metadata
+        # Return FailedSongDownloadError if download failed for any reason
+        if self.url_type == "spotify-song":
+            if not bearer_token:
+                return FailedSongDownloadError("Failed getting spotify metadata: Bearer token invalid or missing")
+
+            spotify_metadata = self.__get_spotify_metadata__(session=session, bearer_token=bearer_token)
+            if not spotify_metadata:
+                return FailedSongDownloadError("Failed getting spotify metadata: Request failed")
+
+            title = spotify_metadata["title"]
+            self.artist = self.artist or spotify_metadata["artist"]
+            self.cover = self.cover or spotify_metadata["cover"]
+            self.url = self.__query_youtube__(title=title, artist=self.artist, session=session)
+            if not self.url:
+                return FailedSongDownloadError("Failed getting youtube URL: Request failed")
+        
+        # Create download directory inside parent output directory path
+        output_path = self.__get_download_path__(base_output_path)
+
+        if not os.path.exists(output_path):
+            os.makedirs(output_path)
+        
+        # Get song format, mp3 fallback; output path and options
+        if song_format not in ["mp3", "flac"]:
+            song_format = "mp3"
+
+        # Set options and download song
+        options = {
+            "format": "bestaudio/best", 
+            "postprocessors": [{
+                "key": "FFmpegExtractAudio",
+                "preferredcodec": song_format,
+                "preferredquality": "192" if song_format == "mp3" else "0",
+            }],
+            "outtmpl": f"{output_path}/{self.title.replace(' ', '_')}",
+            "quiet": False,
+            "no_warnings": False,
+        }
+        try:
+            with yt_dlp.YoutubeDL(options) as ydl:
+                ydl.download([self.url])
+        except Exception as e:
+            return FailedSongDownloadError(f"Failed downloading song: {e}")
+        
+    def download_cover(self, base_path: str) -> None|FailedCoverDownloadError:
+        """
+        Downloads cover from self.cover URL. Meant to be called after download()
+        Will return FailedCoverDownloadError if path does not exist since it means download() failed or was not called beforehand
+
+        Params:
+        base_path (str): Base path
+        """ 
+        # Download cover if present
+        # Get request as stream, write by chunks into the cover path if does not exist already
+        # Invalidates multiple <cover> tags inside the same album by design
+        output_path = self.__get_download_path__(base_path)
+        if not os.path.exists(output_path):
+            return FailedCoverDownloadError("Song download path does not exist")
+        
+        try:
+            r = session.get(self.cover, stream=True)
+            if not r.ok:
+                return FailedCoverDownloadError("Failed fetching cover image")
+
+            if os.path.exists(f"{output_path}/cover"):
+                return 
+            with open(file=f"{output_path}/cover", mode="wb") as f:
+                for chunk in r:
+                    f.write(chunk)
+        
+        except Exception as e:
+            return FailedCoverDownloadError("Failed fetching cover image")
