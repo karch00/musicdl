@@ -178,13 +178,14 @@ class Song:
         except Exception as e:
             return FailedSongDownloadError(f"Failed downloading song: {e}")
         
-    def download_cover(self, base_path: str) -> None|FailedCoverDownloadError:
+    def download_cover(self, base_path: str, session: requests.Session) -> None|FailedCoverDownloadError:
         """
         Downloads cover from self.cover URL. Meant to be called after download()
         Will return FailedCoverDownloadError if path does not exist since it means download() failed or was not called beforehand
 
         Params:
         base_path (str): Base path
+        session (requests.Session): The session to make requests from
         """ 
         # Download cover if present
         # Get request as stream, write by chunks into the cover path if does not exist already
