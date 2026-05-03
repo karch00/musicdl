@@ -9,6 +9,9 @@ class MusicList:
     Music list class. Represents the music list file.
 
     Automatically parses file and creates songs with their respective metadata on class creation.
+
+    ### Attributes:
+    - path (str): File path
     """
     def __init__(self, path: str):
         self.path = path
@@ -19,8 +22,8 @@ class MusicList:
         """
         Reads file lines, returns a list with each read line.
 
-        Returns:
-        lines (list[str]): Lines read
+        ### Returns:
+        - out (list[str]): Lines read
         """
         if not pathlib.Path(self.path).exists():
             return FileNotFoundError
@@ -33,11 +36,11 @@ class MusicList:
         """
         Gets the metadata set for the tag section in the line. Returns None if not a valid metadata tag
 
-        Params:
-        line (str): Line to read for metadata tag
+        ### Params:
+        - line (str): Line to read for metadata tag
 
-        Returns:
-        tag metadata (dict | None): Tag metadata to add/remove or None if not a valid tag
+        ### Returns:
+        - out (dict | None): Tag metadata to add/remove or None if not a valid tag
         """
         
         # Get tag type, opening | closing or return None if invalid
@@ -79,11 +82,11 @@ class MusicList:
 
         Returns a dictionary with the url and title items, or None if wrongly formatted
 
-        Params:
-        line (str): Line to be read
+        ### Params:
+        - line (str): Line to be read
 
-        Returns:
-        song (dict): Dictionary with title and url items
+        ### Returns:
+        - out (dict): Dictionary with title and url items
         """
         PATTERN = re.compile(r"((?:https?:\/\/)?(?:www\.)?[-a-zA-Z0-9@%._\+~#=]{2,256}\.[a-z]{2,6}\b(?:[-a-zA-Z0-9@:%_\+.~#?&\/=]*))(?: (.+))?")
         
@@ -105,8 +108,8 @@ class MusicList:
         - **spotify-song**: A spotify song or a 
         - None: Not a valid URL
 
-        Returns:
-        type (str|None): Type of the url, None if invalid
+        ### Returns:
+        - out (str|None): Type of the url, None if invalid
         """
         PATTERNS = {
             "spotify-song": re.compile(r'https?://open\.spotify\.com/track/[A-Za-z0-9]+'),
@@ -123,8 +126,8 @@ class MusicList:
         """
         Parses the read file list to generate every song and append it to self.songs
 
-        Returns:
-        songs (list): List of Song objects
+        ### Returns:
+        - out (list): List of Song objects
         """
         lines = self.__read_file__()
         if lines is FileNotFoundError:
