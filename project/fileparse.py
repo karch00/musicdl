@@ -45,7 +45,7 @@ class MusicList:
         
         # Get tag type, opening | closing or return None if invalid
         TYPE_PATTERNS = { 
-            "opening": re.compile(r"<((?:artist|album|cover|genre)=[\w ]+|(?:year|track)=\d+)>"),
+            "opening": re.compile(r"<((?:artist|album|cover|genre)=.+|(?:year|track)=\d+)>"),
             "closing": re.compile(r"<\/(artist|album|cover|genre|year|track)>")
         }
 
@@ -112,8 +112,8 @@ class MusicList:
         - out (str|None): Type of the url, None if invalid
         """
         PATTERNS = {
-            "spotify-song": re.compile(r'https?://open\.spotify\.com/track/[A-Za-z0-9]+'),
-            "youtube-song": re.compile(r'https?://(www\.)?(youtube\.com/watch\?v=|youtu\.be/)[A-Za-z0-9_-]+'),
+            "spotify-song": re.compile(r'https?://open\.spotify\.com\/track\/[A-Za-z0-9]+'),
+            "youtube-song": re.compile(r'https?:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[A-Za-z0-9_-]+'),
         }
 
         for url_type, pattern in PATTERNS.items():
@@ -189,7 +189,7 @@ class MusicList:
             )
             
             # Add track count if present in metadata
-            if not metadata["track"] is None:
+            if metadata["track"] is not None:
                 metadata["track"] += 1
 
             line_count+=1
