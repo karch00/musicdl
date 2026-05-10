@@ -133,15 +133,24 @@ class Song:
         parent_directory = parent_directory.replace("\\", "/")
         output_path = f"{parent_directory}{'/' if parent_directory[-1] != '/' else ''}"
         if self.artist:
-            output_path += f"/{self.artist.replace(' ', '_')}"
+            output_path += f"{'/' if output_path[-1] != '/' else ''}{self.artist.replace(' ', '_')}"
         if self.album:
-            output_path += f"/{self.album.replace(' ', '_')}"
+            output_path += f"{'/' if output_path[-1] != '/' else ''}{self.album.replace(' ', '_')}"
         if not self.artist and not self.album:
-            output_path += f"/{self.title.replace(' ', '_')}"
-        
+            output_path += f"{'/' if output_path[-1] != '/' else ''}{self.title.replace(' ', '_')}"
+
         return output_path
     
-    def __detect_image_mime(data: bytes) -> str:
+    def __detect_image_mime(self, data: bytes) -> str:
+        """
+        Detects mime type of the cover image
+
+        ### Params:
+        - data (bytes): Cover data in bytes
+
+        ### Returns:
+        - out (str): Mime type
+        """
         if data[:3] == b'\xff\xd8\xff':
             return "image/jpeg"
         if data[:8] == b'\x89PNG\r\n\x1a\n':
@@ -303,16 +312,18 @@ class Song:
                 else:
                     audio = ID3(song_path)
                     with open(cover_path, "rb") as f:
-                        print(self.__detect_image_mime(f.read()))
+                        cover_data = f.read()
+                        print(self.__detect_image_mime(cover_data))
                         audio.add(APIC(
                             encoding = 3,
-                            mime = self.__detect_image_mime(f.read()),
+                            mime = self.__detect_image_mime(cover_data),
                             type = 3,
                             desc = "Cover art",
-                            data = f.read()
+                            data = cover_data
                         ))
                 audio.save()
         except Exception as e:
+            print(e)
             return FailedMetadataApplyError(f"Failed metadata cover apply: {e}")
 
 
