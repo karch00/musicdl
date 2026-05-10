@@ -68,7 +68,7 @@ class MusicList:
 
             metadata[tag_key] = tag_value
         else:
-            metadata[tag_key] = None
+            metadata[tag_key] = ""
         
         return metadata
     
@@ -132,13 +132,13 @@ class MusicList:
 
         songs = []
         metadata = {
-            "title": None,
-            "artist": None,
-            "album": None,
-            "cover": None,
-            "genre": None,
-            "year": None,
-            "track": None
+            "title": "",
+            "artist": "",
+            "album": "",
+            "cover": "",
+            "genre": "",
+            "year": "",
+            "track": ""
         }
         line_count = 1
         for line in lines:
@@ -160,15 +160,21 @@ class MusicList:
             # continue to next iteration if song or URL not valid
             song = self.__get_song_line__(line)
             if not song:
-                print(f"Warning: Invalid song at line {line_count}: {line}")
+                print(f"[~] Warning: Invalid song at line {line_count}: {line}")
                 continue
             
             title = song["title"]
-            url = song["url"]
-            url_type = self.__get_url_type__(url)
+            url_type = self.__get_url_type__(song["url"])
             if not url_type:
-                print(f"Warning: Invalid song URL at line {line_count}: {line}")
+                print(f"[~] Warning: Invalid song URL at line {line_count}: {line}")
                 continue
+
+            # Sanitize song for any ?list or additional URL queries if youtube song
+            if url_type == "youtube-song":
+                video_pattern = re.compile(r"https?:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[A-Za-z0-9_-]+")
+                url = video_pattern.match(song["url"])[0]
+            else: 
+                url = song["url"]
 
             # Append song to song list
             songs.append(
@@ -186,8 +192,9 @@ class MusicList:
             )
             
             # Add track count if present in metadata
-            if metadata["track"] is not None:
-                metadata["track"] += 1
+            if metadata["track"]:
+                track_int = int(metadata["track"]) + 1
+                metadata["track"] = str(track_int)
 
             line_count+=1
         
