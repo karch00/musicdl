@@ -1,7 +1,7 @@
 import pathlib
 from typing import Literal
 import re
-from project.songs import Song
+from songs import Song
 
 
 class MusicList:
@@ -65,9 +65,6 @@ class MusicList:
         metadata = {}
         if tag_type == "opening":
             tag_value = " ".join(tag_group.rsplit(f"{tag_key}="))[1:]
-            
-            if tag_key == "track":
-                tag_value = int(tag_value)
 
             metadata[tag_key] = tag_value
         else:
