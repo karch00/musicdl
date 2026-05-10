@@ -321,7 +321,6 @@ class Song:
                             data = cover_data
                         ))
                 audio.save()
-                print(1/0)
         except Exception as e:
             return FailedMetadataApplyError(f"Failed metadata cover apply: {e}")
 
