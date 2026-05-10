@@ -7,13 +7,13 @@ from mutagen.flac import FLAC, Picture
 from mutagen.easyid3 import EasyID3
 from mutagen.id3 import ID3, APIC
 
-class FailedSongDownloadError:
+class FailedSongDownloadError(Exception):
     def __init__(self, message: str|None = None):
         self.message = message
-class FailedCoverDownloadError:
+class FailedCoverDownloadError(Exception):
     def __init__(self, message: str|None = None):
         self.message = message
-class FailedMetadataApplyError:
+class FailedMetadataApplyError(Exception):
     def __init__(self, message: str|None = None):
         self.message = message
 
@@ -313,7 +313,6 @@ class Song:
                     audio = ID3(song_path)
                     with open(cover_path, "rb") as f:
                         cover_data = f.read()
-                        print(self.__detect_image_mime(cover_data))
                         audio.add(APIC(
                             encoding = 3,
                             mime = self.__detect_image_mime(cover_data),
@@ -322,8 +321,8 @@ class Song:
                             data = cover_data
                         ))
                 audio.save()
+                print(1/0)
         except Exception as e:
-            print(e)
             return FailedMetadataApplyError(f"Failed metadata cover apply: {e}")
 
 
