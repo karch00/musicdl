@@ -30,7 +30,7 @@ class Song:
     - cover(str) : Album cover art URL or path
     - genre(str)
     - year(str)
-    - track(int)
+    - track(str)
 
     ### Methods:
     - download_song(parent_directory:str, song_format:Literal["mp3", "flac"], session:requests.Session)-> None | FailedSongDownloadError
@@ -47,7 +47,7 @@ class Song:
         cover: str|None = None,
         genre: str|None = None,
         year: str|None = None,
-        track: int|None = None
+        track: str|None = None
     ):
         self.url = url
         self.url_type = url_type
@@ -141,7 +141,7 @@ class Song:
         
         return output_path
 
-    def download_song(self, parent_directory: str, song_format: Literal["mp3", "flac"], session: requests.Session, bearer_token: str|None = None) -> None|FailedSongDownloadError:
+    def download_song(self, parent_directory: str, song_format: Literal["mp3", "flac"], session: requests.Session, verbose: bool = False, bearer_token: str|None = None) -> None|FailedSongDownloadError:
         """
         Downloads the song and its cover image onto the same 'Artist/Album/' directory
 
@@ -192,7 +192,7 @@ class Song:
                 "preferredquality": "192" if song_format == "mp3" else "0",
             }],
             "outtmpl": f"{output_path}/{self.title.replace(' ', '_')}",
-            "quiet": False,
+            "quiet": not verbose,
             "no_warnings": False,
         }
         try:
