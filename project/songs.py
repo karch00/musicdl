@@ -59,7 +59,7 @@ class Song:
         self.year = year
         self.track = track
     
-    def __get_spotify_metadata__(self, session: requests.Session, bearer_token: str) -> dict[str, str] | None:
+    def __get_spotify_metadata(self, session: requests.Session, bearer_token: str) -> dict[str, str] | None:
         """
         Gets metadata from the spotify link and returns the Title, Artist and Art album cover for
         more accurate search results from youtube.
@@ -93,7 +93,7 @@ class Song:
         # Return metadata
         return {"title": title, "artist": artist, "cover": cover}
     
-    def __query_youtube__(self, title: str, artist: str, session: requests.Session) -> str | None:
+    def __query_youtube(self, title: str, artist: str, session: requests.Session) -> str | None:
         """
         Queries youtube and searches for the title to return the corresponding URL
 
@@ -119,7 +119,7 @@ class Song:
 
         return f"https://youtube.com{url_component}"
 
-    def __get_download_path_dir_tree__(self, parent_directory: str) -> str:
+    def __get_download_path_dir_tree(self, parent_directory: str) -> str:
         """
         Returns the download path directory tree for song/cover to download
 
@@ -140,6 +140,15 @@ class Song:
             output_path += f"/{self.title.replace(' ', '_')}"
         
         return output_path
+    
+    def __detect_image_mime(data: bytes) -> str:
+        if data[:3] == b'\xff\xd8\xff':
+            return "image/jpeg"
+        if data[:8] == b'\x89PNG\r\n\x1a\n':
+            return "image/png"
+        if data[:4] == b'RIFF' and data[8:12] == b'WEBP':
+            return "image/webp"
+        return "image/jpeg"
 
     def download_song(self, parent_directory: str, song_format: Literal["mp3", "flac"], session: requests.Session, verbose: bool = False, bearer_token: str|None = None) -> None|FailedSongDownloadError:
         """
@@ -162,19 +171,19 @@ class Song:
             if not bearer_token:
                 return FailedSongDownloadError("Failed getting spotify metadata: Bearer token invalid or missing")
 
-            spotify_metadata = self.__get_spotify_metadata__(session=session, bearer_token=bearer_token)
+            spotify_metadata = self.__get_spotify_metadata(session=session, bearer_token=bearer_token)
             if not spotify_metadata:
                 return FailedSongDownloadError("Failed getting spotify metadata: Request failed")
 
             title = spotify_metadata["title"]
             self.artist = self.artist or spotify_metadata["artist"]
             self.cover = self.cover or spotify_metadata["cover"]
-            self.url = self.__query_youtube__(title=title, artist=self.artist, session=session)
+            self.url = self.__query_youtube(title=title, artist=self.artist, session=session)
             if not self.url:
                 return FailedSongDownloadError("Failed getting youtube URL: Request failed")
         
         # Create download directory inside parent output directory path
-        output_path = self.__get_download_path_dir_tree__(parent_directory)
+        output_path = self.__get_download_path_dir_tree(parent_directory)
 
         if not os.path.exists(output_path):
             os.makedirs(output_path)
@@ -216,7 +225,7 @@ class Song:
         # Download cover if present
         # Get request as stream, write by chunks into the cover path if does not exist already
         # Invalidates multiple <cover> tags inside the same album by design
-        output_path = self.__get_download_path_dir_tree__(parent_directory)
+        output_path = self.__get_download_path_dir_tree(parent_directory)
         if not os.path.exists(output_path):
             return FailedCoverDownloadError("Song download path does not exist")
         
@@ -251,7 +260,7 @@ class Song:
             song_format = "mp3"
 
         # Check if parent dir and song paths exist
-        dir_path= self.__get_download_path_dir_tree__(parent_directory)
+        dir_path= self.__get_download_path_dir_tree(parent_directory)
         song_path = f"{dir_path}/{self.title.replace(' ', '_')}.{song_format}"
         for path in [dir_path, song_path]:
             if not os.path.exists(path):
@@ -292,14 +301,16 @@ class Song:
                     image.desc = "Cover art"
                     audio.add_picture(image)
                 else:
-                    audio= ID3(song_path)
-                    audio.add(APIC(
-                        encoding = 3,
-                        mime = "image/jpeg",
-                        type = 3,
-                        desc = "Cover art",
-                        data = open(cover_path, "rb").read()
-                    ))
+                    audio = ID3(song_path)
+                    with open(cover_path, "rb") as f:
+                        print(self.__detect_image_mime(f.read()))
+                        audio.add(APIC(
+                            encoding = 3,
+                            mime = self.__detect_image_mime(f.read()),
+                            type = 3,
+                            desc = "Cover art",
+                            data = f.read()
+                        ))
                 audio.save()
         except Exception as e:
             return FailedMetadataApplyError(f"Failed metadata cover apply: {e}")

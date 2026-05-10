@@ -15,10 +15,10 @@ class MusicList:
     """
     def __init__(self, path: str):
         self.path = path
-        self.songs = self.__parse_songs__()
+        self.songs = self.__parse_songs()
     
 
-    def __read_file__(self) -> list[str]:
+    def __read_file(self) -> list[str]:
         """
         Reads file lines, returns a list with each read line.
 
@@ -32,7 +32,7 @@ class MusicList:
             return f.readlines()
     
 
-    def __get_section_metadata__(self, line: str) -> dict[str, str|None] | None:
+    def __get_section_metadata(self, line: str) -> dict[str, str|None] | None:
         """
         Gets the metadata set for the tag section in the line. Returns None if not a valid metadata tag
 
@@ -73,7 +73,7 @@ class MusicList:
         return metadata
     
 
-    def __get_song_line__(self, line: str) -> dict[str, str] | None:
+    def __get_song_line(self, line: str) -> dict[str, str] | None:
         """
         Gets the song title and URL. Line must be formatted as follows: URL TITLE
 
@@ -98,7 +98,7 @@ class MusicList:
         
 
 
-    def __get_url_type__(self, url: str) -> str | None:
+    def __get_url_type(self, url: str) -> str | None:
         """
         Gets the type of URL returning the following:
         - **youtube-song**: A youtube song or a 
@@ -119,14 +119,14 @@ class MusicList:
         return None
 
 
-    def __parse_songs__(self) -> list[Song] | FileNotFoundError:
+    def __parse_songs(self) -> list[Song] | FileNotFoundError:
         """
         Parses the read file list to generate every song and append it to self.songs
 
         ### Returns:
         - out (list): List of Song objects
         """
-        lines = self.__read_file__()
+        lines = self.__read_file()
         if lines is FileNotFoundError:
             return FileNotFoundError
 
@@ -150,7 +150,7 @@ class MusicList:
 
             # Read and Assign metadata if present and valid
             # continue to next iteration to skip song validation
-            custom_metadata = self.__get_section_metadata__(line)
+            custom_metadata = self.__get_section_metadata(line)
             if custom_metadata:
                 (key, value), = custom_metadata.items()
                 metadata[key] = value
@@ -158,13 +158,13 @@ class MusicList:
 
             # Read and assign song title and URL and append metadata if present and valid
             # continue to next iteration if song or URL not valid
-            song = self.__get_song_line__(line)
+            song = self.__get_song_line(line)
             if not song:
                 print(f"[~] Warning: Invalid song at line {line_count}: {line}")
                 continue
             
             title = song["title"]
-            url_type = self.__get_url_type__(song["url"])
+            url_type = self.__get_url_type(song["url"])
             if not url_type:
                 print(f"[~] Warning: Invalid song URL at line {line_count}: {line}")
                 continue
