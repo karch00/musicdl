@@ -10,13 +10,17 @@ class MusicList:
 
     Automatically parses file and creates songs with their respective metadata on class creation.
 
-    ### Attributes:
-    - path (str): File path
+    Args:
+        path (str): File path
+    Attributes:
+        path (str): File path
+        songs (list[Song]): list of songs read from file
+        contains_spotify (bool): Whether there a spotify songs within the list or not
     """
     def __init__(self, path: str):
         self.path = path
         self.songs = self.__parse_songs()
-    
+        self.contains_spotify = False
 
     def __read_file(self) -> list[str]:
         """
@@ -30,17 +34,16 @@ class MusicList:
         
         with open(file=self.path, mode="r", encoding="utf-8") as f:
             return f.readlines()
-    
 
     def __get_section_metadata(self, line: str) -> dict[str, str|None] | None:
         """
         Gets the metadata set for the tag section in the line. Returns None if not a valid metadata tag
 
-        ### Params:
-        - line (str): Line to read for metadata tag
+        Args:
+            line (str): Line to read for metadata tag
 
-        ### Returns:
-        - out (dict | None): Tag metadata to add/remove or None if not a valid tag
+        Returns:
+            out (dict | None): Tag metadata to add/remove or None if not a valid tag
         """
         
         # Get tag type, opening | closing or return None if invalid
@@ -79,11 +82,11 @@ class MusicList:
 
         Returns a dictionary with the url and title items, or None if wrongly formatted
 
-        ### Params:
-        - line (str): Line to be read
+        Args:
+            line (str): Line to be read
 
-        ### Returns:
-        - out (dict): Dictionary with title and url items
+        Returns:
+            out (dict): Dictionary with title and url items
         """
         PATTERN = re.compile(r"((?:https?:\/\/)?(?:www\.)?[-a-zA-Z0-9@%._\+~#=]{2,256}\.[a-z]{2,6}\b(?:[-a-zA-Z0-9@:%_\+.~#?&\/=]*))(?: (.+))?")
         
@@ -96,17 +99,15 @@ class MusicList:
 
         return {"url": line_groups[0], "title": line_groups[1]}
         
-
-
     def __get_url_type(self, url: str) -> str | None:
         """
         Gets the type of URL returning the following:
-        - **youtube-song**: A youtube song or a 
-        - **spotify-song**: A spotify song or a 
+        - youtube-song: A youtube song or a 
+        - spotify-song: A spotify song or a 
         - None: Not a valid URL
 
-        ### Returns:
-        - out (str|None): Type of the url, None if invalid
+        Returns:
+            out (str|None): Type of the url, None if invalid
         """
         PATTERNS = {
             "spotify-song": re.compile(r'https?://open\.spotify\.com\/track\/[A-Za-z0-9]+'),
@@ -115,16 +116,17 @@ class MusicList:
 
         for url_type, pattern in PATTERNS.items():
             if pattern.match(url):
+                if not self.contains_spotify and url_type == "spotify-song":
+                    self.contains_spotify = True
                 return url_type
         return None
-
 
     def __parse_songs(self) -> list[Song] | FileNotFoundError:
         """
         Parses the read file list to generate every song and append it to self.songs
 
-        ### Returns:
-        - out (list): List of Song objects
+        Returns:
+            out (list): List of Song objects
         """
         lines = self.__read_file()
         if lines is FileNotFoundError:
