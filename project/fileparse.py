@@ -102,9 +102,12 @@ class MusicList:
     def __get_url_type(self, url: str) -> str | None:
         """
         Gets the type of URL returning the following:
-        - youtube-song: A youtube song or a 
-        - spotify-song: A spotify song or a 
+        - youtube-song: A youtube song 
+        - spotify-song: A spotify song 
         - None: Not a valid URL
+
+        Args:
+            url (str): Song URL to validate
 
         Returns:
             out (str|None): Type of the url, None if invalid
