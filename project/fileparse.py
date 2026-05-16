@@ -15,7 +15,7 @@ class MusicList:
     Attributes:
         path (str): File path
         songs (list[Song]): list of songs read from file
-        contains_spotify (bool): Whether there a spotify songs within the list or not
+        contains_spotify (bool): Whether there are spotify songs within the list or not
     """
     def __init__(self, path: str):
         self.path = path

@@ -1,5 +1,6 @@
 import argparse
 import os
+from dotenv import load_dotenv
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from time import sleep
@@ -20,6 +21,7 @@ def download_song_wrapper(song_to_process: dict) -> None:
     sleep(randint(1, 10))
     
     # Variable init
+    bearer_token: str = song_to_process["bearer_token"]
     song: Song = song_to_process["song"]
     song_idx: int = song_to_process["song_idx"]
     song_count: int = song_to_process["song_count"]
@@ -40,7 +42,7 @@ def download_song_wrapper(song_to_process: dict) -> None:
 
     # Download song
     print(f"[+] Downloading song {song_idx}/{song_count}:\n\t- URL: {url}\n\t- Title: {title}\n\t- Artist: {artist}\n\t- Album: {album}\n\t- Cover: {cover}\n\t- Track: {track}\n\t- Genre: {genre}\n\t- Year: {year}")
-    res = song.download_song(output_path, song_format, session, verbose) # Add bearer token when spotify is set up
+    res = song.download_song(output_path, song_format, session, bearer_token, verbose) # Add bearer token when spotify is set up
     if isinstance(res, FailedSongDownloadError):
         print(f"[-] Failed downloading song: {res.message}")
     
@@ -59,6 +61,25 @@ def download_song_wrapper(song_to_process: dict) -> None:
 
     print(f"[+] Finished processing song {song_idx}\n")
 
+def get_bearer_token(session: Session, client_id: str, client_secret: str) -> dict | None:
+    """
+    Gets bearer token for spotify API
+
+    Args:
+        session (Session): request session
+        client_id (str): app client id
+        client_secret (str): app client secret
+    Returns:
+        out (dict|None): post content, None if invalid
+    """
+    res = session.post(
+        f"https://accounts.spotify.com/api/token?grant_type=client_credentials&client_id={client_id}&client_secret={client_secret}",
+        headers="Content-Type: application/x-www-form-urlencoded"
+    )
+    out = res.json() if res.ok else None
+    
+    return out
+
 def main():
     # Parse args
     parser = argparse.ArgumentParser()
@@ -66,13 +87,33 @@ def main():
     parser.add_argument("-f", "--format", choices=["mp3", "flac"], required=False, help="Music format to download songs as. Valid are: mp3 and flac. Default mp3")
     parser.add_argument("-o", "--output", required=False, help="Parent directory where songs will be downloaded and sorted. Default is ./music. If path does not exist, will create it")
     parser.add_argument("-v", "--verbose", required=False, help="Controls whether yt-dlp will be verbose or not")
+    parser.add_argument("-s", "--spotify_credentials", required=False, help="Path to spotify credentials (app ID and secret). File must be formatted .env-style and contain the variables: ID=1234 and SECRET=1bf3")
     args = parser.parse_args()
 
     list_filename = args.filename
     song_format = args.format or "mp3"
     output_path = args.output or "./music"
     verbose = args.verbose or False
+    spotify_envpath = args.spotify_credentials or None
     
+    # Check spotify env path validity
+    if spotify_envpath:
+        # File exists / doesnt exist
+        if Path(spotify_envpath).exists() and Path(spotify_envpath).is_file():
+            print("[+] Spotify env found")
+            
+            # Check for environment variables present
+            load_dotenv(spotify_envpath)
+            spotify_id = os.getenv("ID")
+            spotify_secret = os.getenv("SECRET")
+
+            if spotify_id and spotify_secret:
+                print("[+] Spotify credentials succesfully set")
+            else:
+                print("[-] Couldn't set spotify credentials\n    Will prompt for credentials if spotify URL found in music file.")
+        else:
+            print("[-] Spotify env not found / invalid file type.\n    Will prompt for credentials if spotify URL found in music file.")
+
     # Check for output path validity
     if not Path(output_path).exists():
         print(f"[~] Output path does not exist, creating directories: {output_path}")
@@ -88,18 +129,10 @@ def main():
         return 1
     
     print(f"[+] {len(songs)} songs read succesfully, starting downloads")
-
-    # Get spotify bearer token
-    if songs_file.contains_spotify:
-        print("[+] Spotify songs found in file")
-        raise NotImplementedError
-        # TODO: 
-        # Implement arg to spotify secret env, validate
-        # If not found, ask here for spotify env
-
-    # Youtube session init
-    youtube_session = Session()
-    youtube_session.headers= {
+    
+    # Session init
+    session = Session()
+    session.headers= {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5',
@@ -108,16 +141,47 @@ def main():
         'Upgrade-Insecure-Requests': '1'
     }
 
+    # Get spotify bearer token
+    if songs_file.contains_spotify:
+        print("[+] Spotify songs found in file")
+        
+        # Prompt, id and secret not set
+        if not spotify_id or not spotify_secret:
+            print("[~] Spotify credentials not specified or could not set")
+            
+            # Request bearer token until valid
+            while True:
+                spotify_id = input("> App ID: ")
+                spotify_secret = input("> App Secret: ")
+                token_dict = get_bearer_token(session, spotify_id, spotify_secret)
+
+                if token_dict and "access_token" in token_dict:
+                    print("[+] Bearer token acquired")
+                    bearer_token = token_dict["access_token"]
+                    break
+
+                print(f"[-] Could not get bearer token: {token_dict}. Re-enter credentials.")
+        # Get bearer token directly
+        else:
+            token_dict = get_bearer_token(session, spotify_id, spotify_secret)
+            if token_dict and "access_token" in token_dict:
+                print("[+] Bearer token acquired")
+                bearer_token = token_dict["access_token"]
+            else:
+                print(f"[-] Could not get bearer token: {token_dict}")
+                return
+
     # Song list for thread pool init
     songs_to_process = []
     for song in songs:
         songs_to_process.append({
+            "bearer_token": bearer_token,
             "song": song,
             "song_idx": songs.index(song)+1,
             "song_count": len(songs),
             "output_path": output_path,
             "song_format": song_format,
-            "session": youtube_session,
+            "session": session,
             "verbose": verbose
         })
     
