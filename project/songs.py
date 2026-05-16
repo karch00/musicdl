@@ -16,6 +16,9 @@ class FailedCoverDownloadError(Exception):
 class FailedMetadataApplyError(Exception):
     def __init__(self, message: str|None = None):
         self.message = message
+class CoverExistsError(Exception):
+    def __init__(self, message: str|None = None):
+        self.message = message
 
 class Song:
     """
@@ -64,12 +67,12 @@ class Song:
         Gets metadata from the spotify link and returns the Title, Artist and Art album cover for
         more accurate search results from youtube.
 
-        ### Params:
-        - session (requests.Session): Parent session
-        - bearer_token (str): Spotify bearing token
+        Args:
+            session (requests.Session): Parent session
+            bearer_token (str): Spotify bearing token
 
-        ### Returns:
-        - out (dict[str, str]): Title, Artist and art cover URL. None if request error
+        Returns:
+            out (dict[str, str]): Title, Artist and art cover URL. None if request error
         """
         # Set headers and URL
         HEADERS = {
@@ -97,11 +100,11 @@ class Song:
         """
         Queries youtube and searches for the title to return the corresponding URL
 
-        ### Params:
-        - title (str): The title to query
+        Args:
+            title (str): The title to query
 
-        ### Returns:
-        - out (str): Corresponding URL, None if query error
+        Returns:
+            out (str): Corresponding URL, None if query error
         """
         # Init variables
         PATTERN=re.compile(r"\/watch\?v=.{11}")
@@ -123,11 +126,11 @@ class Song:
         """
         Returns the download path directory tree for song/cover to download
 
-        ### Params:
-        - parent_directory (str): Parent path
+        Args:
+            parent_directory (str): Parent path
 
-        ### Returns:
-        - out (str): Full directory tree from parent_directory  
+        Returns:
+            out (str): Full directory tree from parent_directory  
         """
         # /artist/album/song ; artist and album can be missing practically, but not recommended!
         parent_directory = parent_directory.replace("\\", "/")
@@ -145,11 +148,11 @@ class Song:
         """
         Detects mime type of the cover image
 
-        ### Params:
-        - data (bytes): Cover data in bytes
+        Args:
+            data (bytes): Cover data in bytes
 
-        ### Returns:
-        - out (str): Mime type
+        Returns:
+            out (str): Mime type
         """
         if data[:3] == b'\xff\xd8\xff':
             return "image/jpeg"
@@ -163,14 +166,14 @@ class Song:
         """
         Downloads the song and its cover image onto the same 'Artist/Album/' directory
 
-        ### Params:
-        - parent_directory (str): base output directory path
-        - song_format (str): format: mp3 or flac
-        - session (requests.Session): The session to make requests from
-        - bearer_token (str|None): Spotify bearer token, None if no succesful spotify API bind or Spotify credentials not present
+        Args:
+            parent_directory (str): base output directory path
+            song_format (str): format: mp3 or flac
+            session (requests.Session): The session to make requests from
+            bearer_token (str|None): Spotify bearer token, None if no succesful spotify API bind or Spotify credentials not present
 
-        ### Returns:
-        error (FailedSongDownloadError): Error produced if any
+        Returns:
+            error (FailedSongDownloadError): Error produced if any
         """
         # Get spotify metadata
         # Change artist and cover to queried if not set by custom metadata
@@ -224,12 +227,12 @@ class Song:
         Downloads cover from self.cover URL. Meant to be called after download()
         Will return FailedCoverDownloadError if path does not exist since it means download() failed or was not called beforehand
 
-        ### Params:
-        - parent_directory (str): Base path
-        - session (requests.Session): The session to make requests from
+        Args:
+            parent_directory (str): Base path
+            session (requests.Session): The session to make requests from
 
-        ### Returns:
-        - error (FailedCoverDownloadError): Error produced, if any
+        Returns:
+            error (FailedCoverDownloadError): Error produced, if any
         """ 
         # Download cover if present
         # Get request as stream, write by chunks into the cover path if does not exist already
@@ -244,7 +247,7 @@ class Song:
                 return FailedCoverDownloadError("Failed fetching cover image")
 
             if os.path.exists(f"{output_path}/cover"):
-                return 
+                return  CoverExistsError(output_path)
             with open(file=f"{output_path}/cover", mode="wb") as f:
                 for chunk in r:
                     f.write(chunk)
@@ -256,12 +259,12 @@ class Song:
         """
         Applies applicable metadata to the song
 
-        ### Params:
-        - parent_directory (str): Parent directory
-        - song_format (str): Song format
+        Args:
+            parent_directory (str): Parent directory
+            song_format (str): Song format
 
-        ### Returns:
-        - error (FailedMetadataApplyError): 
+        Returns:
+            error (FailedMetadataApplyError): 
         """
         # Init variables
         # Ensure valid song format, mp3 fallback
