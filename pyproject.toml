@@ -1,8 +1,29 @@
 [project]
 name = "musicdl"
 version = "0.0.1"
+authors = [
+  { name="Karch", email="karch00@proton.me" },
+]
+description = "Download music based on xml-like structure"
+#readme = "README.md" # TO ADD
 requires-python = ">=3.13"
+dependencies = [
+    "requests >= 2.34.0",
+    "python-dotenv >= 1.2.2",
+    "yt-dlp >= 2026.3.17",
+    "mutagen >= 1.47.0"
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "CC0-1.0"
+license-files = ["LICENSE"]
+
+[project.urls]
+Homepage = "https://github.com/karch00/musicdl"
+Issues = "https://github.com/karch00/musicdl/issues"
 
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools >= 45", "wheel"]
 build-backend   = "setuptools.build_meta"
