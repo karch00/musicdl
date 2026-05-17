@@ -1,7 +1,7 @@
 import pathlib
 from typing import Literal
 import re
-from songs import Song
+from musicdl.songs import Song
 
 
 class MusicList:

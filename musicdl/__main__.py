@@ -6,8 +6,8 @@ from pathlib import Path
 from time import sleep
 from random import randint
 from requests import Session
-from fileparse import MusicList
-from songs import *
+from musicdl.fileparse import MusicList
+from musicdl.songs import *
 
 
 def download_song_wrapper(song_to_process: dict) -> None:

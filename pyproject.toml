@@ -24,6 +24,9 @@ license-files = ["LICENSE"]
 Homepage = "https://github.com/karch00/musicdl"
 Issues = "https://github.com/karch00/musicdl/issues"
 
+[project.scripts]
+musicdl = "musicdl.__main__:main"
+
 [build-system]
 requires = ["setuptools >= 45", "wheel"]
 build-backend   = "setuptools.build_meta"
