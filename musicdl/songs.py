@@ -24,21 +24,16 @@ class Song:
     """
     Song class. Represents a song and its metadata.
 
-    ### Attributes:
-    - url (str): Song URL
-    - url_type (str): youtube-song or spotify-song
-    - title (str)
-    - artist (str)
-    - album (str)
-    - cover(str) : Album cover art URL or path
-    - genre(str)
-    - year(str)
-    - track(str)
-
-    ### Methods:
-    - download_song(parent_directory:str, song_format:Literal["mp3", "flac"], session:requests.Session)-> None | FailedSongDownloadError
-    - download_cover(parent_directory:str, session:requests.Session) -> None | FailedCoverDownloadError
-    - apply_metadata(parent_directory:str, song_format:Literal["mp3", "flac"]) -> None | FailedMetadataApplyError 
+    Args:
+        url (str): Song URL
+        url_type (str): youtube-song or spotify-song
+        title (str)
+        artist (str)
+        album (str)
+        cover(str) : Album cover art URL or path
+        genre(str)
+        year(str)
+        track(str)
     """
     def __init__(
         self, 
@@ -298,32 +293,34 @@ class Song:
         audio.save()
 
         # Set cover 
+        if not self.cover:
+            return
+
         # Check if cover_path exists
         cover_path = f"{dir_path}/cover"
         if not os.path.exists(cover_path):
             return FailedMetadataApplyError(f"Failed metadata cover apply: Cover [{path}] does not exist")
         
         try:
-            if self.cover:
-                if song_format == "flac":
-                    image = Picture()
-                    image.type = 3
-                    image.mime = "image/jpeg"
-                    image.data = open(cover_path, "rb").read()
-                    image.desc = "Cover art"
-                    audio.add_picture(image)
-                else:
-                    audio = ID3(song_path)
-                    with open(cover_path, "rb") as f:
-                        cover_data = f.read()
-                        audio.add(APIC(
-                            encoding = 3,
-                            mime = self.__detect_image_mime(cover_data),
-                            type = 3,
-                            desc = "Cover art",
-                            data = cover_data
-                        ))
-                audio.save()
+            if song_format == "flac":
+                image = Picture()
+                image.type = 3
+                image.mime = self.__detect_image_mime(cover_data)
+                image.data = open(cover_path, "rb").read()
+                image.desc = "Cover art"
+                audio.add_picture(image)
+            else:
+                audio = ID3(song_path)
+                with open(cover_path, "rb") as f:
+                    cover_data = f.read()
+                    audio.add(APIC(
+                        encoding = 3,
+                        mime = self.__detect_image_mime(cover_data),
+                        type = 3,
+                        desc = "Cover art",
+                        data = cover_data
+                    ))
+            audio.save()
         except Exception as e:
             return FailedMetadataApplyError(f"Failed metadata cover apply: {e}")
 
