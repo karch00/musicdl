@@ -41,12 +41,12 @@ class Song:
         url: str,
         url_type: Literal[None, "youtube-song", "spotify-song"],
         title: str, 
-        artist: str|None = None, 
-        album: str|None = None, 
-        cover: str|None = None,
-        genre: str|None = None,
-        year: str|None = None,
-        track: str|None = None
+        artist: str = "", 
+        album: str = "", 
+        cover: str = "",
+        genre: str = "",
+        year: str = "",
+        track: str = ""
     ):
         self.url = url
         self.url_type = url_type
@@ -72,9 +72,9 @@ class Song:
         """
         # Set headers and URL
         HEADERS = SP_HEADERS | {
-            "Authorization": f"Bearer  {bearer_token}"
+            "Authorization": f"Bearer {bearer_token}"
         }
-        url_id = self.url.strip("https://open.spotify.com/track/")
+        url_id = self.url.split("/track/")[1]
         URL = f"https://api.spotify.com/v1/tracks/{url_id}"
         
         # Get request and check for ok status
@@ -304,19 +304,19 @@ class Song:
         # Check if cover_path exists
         cover_path = f"{dir_path}/cover"
         if not os.path.exists(cover_path):
-            return FailedMetadataApplyError(f"Failed metadata cover apply: Cover [{path}] does not exist")
+            return FailedMetadataApplyError(f"Failed metadata cover apply: Cover [{cover_path}] does not exist")
         
         try:
-            if song_format == "flac":
-                image = Picture()
-                image.type = 3
-                image.mime = self.__detect_image_mime(cover_data)
-                image.data = open(cover_path, "rb").read()
-                image.desc = "Cover art"
-                audio.add_picture(image)
-            else:
-                audio = ID3(song_path)
-                with open(cover_path, "rb") as f:
+            with open(cover_path, "rb") as f:
+                if song_format == "flac":
+                    image = Picture()
+                    image.type = 3
+                    image.mime = self.__detect_image_mime(cover_data)
+                    image.data = f.read()
+                    image.desc = "Cover art"
+                    audio.add_picture(image)
+                else:
+                    audio = ID3(song_path)
                     cover_data = f.read()
                     audio.add(APIC(
                         encoding = 3,

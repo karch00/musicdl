@@ -42,6 +42,7 @@ def download_song_wrapper(song_to_process: dict) -> None:
     res = song.download_song(output_path, song_format, session, verbose, bearer_token) # Add bearer token when spotify is set up
     if isinstance(res, FailedSongDownloadError):
         print(f"[-] Failed downloading song: {res.message}")
+        return
     
     # Download cover if present
     print(f"[+] Downloading cover...")
@@ -167,11 +168,11 @@ def main():
 
     # Song list for thread pool init
     songs_to_process = []
-    for song in songs:
+    for idx, song in enumerate(songs, start=1):
         songs_to_process.append({
             "bearer_token": bearer_token,
             "song": song,
-            "song_idx": songs.index(song)+1,
+            "song_idx": idx,
             "song_count": len(songs),
             "output_path": output_path,
             "song_format": song_format,
@@ -180,8 +181,14 @@ def main():
         })
     
     # Start song processing
-    with ThreadPoolExecutor(max_workers=4) as executor:
-        executor.map(download_song_wrapper, songs_to_process)
+    try:
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            executor.map(download_song_wrapper, songs_to_process)
+    except KeyboardInterrupt:
+        print("[~] Signal 2, exiting")
+        executor.shutdown(wait=False, cancel_futures=True)
+        exit()
+
 
 if __name__ == "__main__":
     main()
