@@ -72,7 +72,7 @@ class Song:
         """
         # Set headers and URL
         HEADERS = SP_HEADERS | {
-            f"Authorization: Bearer  {bearer_token}"
+            "Authorization": f"Bearer  {bearer_token}"
         }
         url_id = self.url.strip("https://open.spotify.com/track/")
         URL = f"https://api.spotify.com/v1/tracks/{url_id}"
@@ -178,8 +178,10 @@ class Song:
         # Change artist and cover to queried if not set by custom metadata
         # Query youtube for /watch?v= URL
         # Return FailedSongDownloadError if download failed for any reason
-        
+
+        print(1) 
         if self.url_type == "spotify-song":
+            print(2)
             if not bearer_token:
                 return FailedSongDownloadError("Failed getting spotify metadata: Bearer token invalid or missing")
 
@@ -193,7 +195,7 @@ class Song:
             self.url = self.__query_youtube(title=title, artist=self.artist, session=session)
             if not self.url:
                 return FailedSongDownloadError("Failed getting youtube URL: Request failed")
-        
+
         # Create download directory inside parent output directory path
         output_path = self.__get_download_path_dir_tree(parent_directory)
 
