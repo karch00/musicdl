@@ -1,5 +1,6 @@
 import argparse
 import os
+import signal
 from dotenv import load_dotenv
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -9,6 +10,12 @@ from musicdl.fileparse import MusicList
 from musicdl.songs import *
 from musicdl.constants import *
 
+def signal_handler(sig, frame):
+    """
+    Signal handler for exit
+    """
+    print("\n[~] Interrupting downloads")
+    os.kill(os.getpid(), signal.SIGTERM)
 
 def download_song_wrapper(song_to_process: dict) -> None:
     """
@@ -81,6 +88,9 @@ def get_bearer_token(session: Session, client_id: str, client_secret: str) -> di
     return res.json()
 
 def main():
+    # Set sigint
+    signal.signal(signal.SIGINT, signal_handler)
+
     # Parse args
     parser = argparse.ArgumentParser()
     parser.add_argument("filename", help="Music list file name or path")
@@ -181,14 +191,8 @@ def main():
         })
     
     # Start song processing
-    try:
-        with ThreadPoolExecutor(max_workers=4) as executor:
-            executor.map(download_song_wrapper, songs_to_process)
-    except KeyboardInterrupt:
-        print("[~] Signal 2, exiting")
-        executor.shutdown(wait=False, cancel_futures=True)
-        exit()
-
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        executor.map(download_song_wrapper, songs_to_process)
 
 if __name__ == "__main__":
     main()
