@@ -1,3 +1,4 @@
+from musicdl.constants import *
 from typing import Literal
 import requests
 import re
@@ -70,8 +71,8 @@ class Song:
             out (dict[str, str]): Title, Artist and art cover URL. None if request error
         """
         # Set headers and URL
-        HEADERS = {
-            f"Authorization: Bearer {bearer_token}"
+        HEADERS = SP_HEADERS | {
+            f"Authorization: Bearer  {bearer_token}"
         }
         url_id = self.url.strip("https://open.spotify.com/track/")
         URL = f"https://api.spotify.com/v1/tracks/{url_id}"
@@ -108,7 +109,10 @@ class Song:
 
         # Search query
         # Return None if request error
-        r = session.get(url=f"https://www.youtube.com/results?search_query={'+'.join(title_list)}+{'+'.join(artist_list)}")
+        r = session.get(
+            url=f"https://www.youtube.com/results?search_query={'+'.join(title_list)}+{'+'.join(artist_list)}",
+            headers=YT_HEADERS
+        )
         if not r.ok:
             return None
 
@@ -174,6 +178,7 @@ class Song:
         # Change artist and cover to queried if not set by custom metadata
         # Query youtube for /watch?v= URL
         # Return FailedSongDownloadError if download failed for any reason
+        
         if self.url_type == "spotify-song":
             if not bearer_token:
                 return FailedSongDownloadError("Failed getting spotify metadata: Bearer token invalid or missing")

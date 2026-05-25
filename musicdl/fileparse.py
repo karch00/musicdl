@@ -1,5 +1,4 @@
 import pathlib
-from typing import Literal
 import re
 from musicdl.songs import Song
 
@@ -17,10 +16,10 @@ class MusicList:
         songs (list[Song]): list of songs read from file
         contains_spotify (bool): Whether there are spotify songs within the list or not
     """
-    def __init__(self, path: str):
+    def __init__(self, path: str, contains_spotify: bool = False):
         self.path = path
+        self.contains_spotify = contains_spotify
         self.songs = self.__parse_songs()
-        self.contains_spotify = False
 
     def __read_file(self) -> list[str]:
         """

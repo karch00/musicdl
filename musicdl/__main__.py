@@ -7,6 +7,7 @@ from time import sleep
 from requests import Session
 from musicdl.fileparse import MusicList
 from musicdl.songs import *
+from musicdl.constants import *
 
 
 def download_song_wrapper(song_to_process: dict) -> None:
@@ -38,7 +39,7 @@ def download_song_wrapper(song_to_process: dict) -> None:
 
     # Download song
     print(f"[+] Downloading song {song_idx}/{song_count}:\n\t- URL: {url}\n\t- Title: {title}\n\t- Artist: {artist}\n\t- Album: {album}\n\t- Cover: {cover}\n\t- Track: {track}\n\t- Genre: {genre}\n\t- Year: {year}")
-    res = song.download_song(output_path, song_format, session, bearer_token, verbose) # Add bearer token when spotify is set up
+    res = song.download_song(output_path, song_format, session, verbose, bearer_token) # Add bearer token when spotify is set up
     if isinstance(res, FailedSongDownloadError):
         print(f"[-] Failed downloading song: {res.message}")
     
@@ -73,9 +74,9 @@ def get_bearer_token(session: Session, client_id: str, client_secret: str) -> di
     """
     res = session.post(
         f"https://accounts.spotify.com/api/token?grant_type=client_credentials&client_id={client_id}&client_secret={client_secret}",
-        headers={"Content-Type": "application/x-www-form-urlencoded"}
+        headers=SP_HEADERS
     )
-    
+
     return res.json()
 
 def main():
@@ -84,14 +85,14 @@ def main():
     parser.add_argument("filename", help="Music list file name or path")
     parser.add_argument("-f", "--format", choices=["mp3", "flac"], required=False, help="Music format to download songs as. Valid are: mp3 and flac. Default mp3")
     parser.add_argument("-o", "--output", required=False, help="Parent directory where songs will be downloaded and sorted. Default is ./music. If path does not exist, will create it")
-    parser.add_argument("-v", "--verbose", required=False, help="Controls whether yt-dlp will be verbose or not")
+    parser.add_argument("-v", "--verbose", required=False, action="store_true", help="Controls whether yt-dlp will be verbose or not")
     parser.add_argument("-s", "--spotify_credentials", required=False, help="Path to spotify credentials (app ID and secret). File must be formatted .env-style and contain the variables: ID=1234 and SECRET=1bf3")
     args = parser.parse_args()
 
     list_filename = args.filename
     song_format = args.format or "mp3"
     output_path = args.output or "./music"
-    verbose = args.verbose or False
+    verbose = args.verbose
     spotify_envpath = args.spotify_credentials or None
     
     # Check spotify env path validity
@@ -132,14 +133,6 @@ def main():
     
     # Session init
     session = Session()
-    session.headers= {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
-        'Accept-Encoding': 'gzip, deflate',
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1'
-    }
 
     # Get spotify bearer token
     bearer_token = ""
