@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from time import sleep
-from random import randint
 from requests import Session
 from musicdl.fileparse import MusicList
 from musicdl.songs import *
@@ -17,9 +16,6 @@ def download_song_wrapper(song_to_process: dict) -> None:
     Args:
         song_to_process (dict): Song containing all info required for multithreaded processing
     """
-    # Initial sleep
-    sleep(randint(1, 10))
-    
     # Variable init
     bearer_token: str = song_to_process["bearer_token"]
     song: Song = song_to_process["song"]
@@ -61,6 +57,9 @@ def download_song_wrapper(song_to_process: dict) -> None:
 
     print(f"[+] Finished processing song {song_idx}\n")
 
+    # Sleep
+    sleep(5)
+
 def get_bearer_token(session: Session, client_id: str, client_secret: str) -> dict | None:
     """
     Gets bearer token for spotify API
@@ -74,11 +73,10 @@ def get_bearer_token(session: Session, client_id: str, client_secret: str) -> di
     """
     res = session.post(
         f"https://accounts.spotify.com/api/token?grant_type=client_credentials&client_id={client_id}&client_secret={client_secret}",
-        headers="Content-Type: application/x-www-form-urlencoded"
+        headers={"Content-Type": "application/x-www-form-urlencoded"}
     )
-    out = res.json() if res.ok else None
     
-    return out
+    return res.json()
 
 def main():
     # Parse args
@@ -97,6 +95,8 @@ def main():
     spotify_envpath = args.spotify_credentials or None
     
     # Check spotify env path validity
+    spotify_id = ""
+    spotify_secret = ""
     if spotify_envpath:
         # File exists / doesnt exist
         if Path(spotify_envpath).exists() and Path(spotify_envpath).is_file():
@@ -142,12 +142,13 @@ def main():
     }
 
     # Get spotify bearer token
+    bearer_token = ""
     if songs_file.contains_spotify:
         print("[+] Spotify songs found in file")
         
         # Prompt, id and secret not set
         if not spotify_id or not spotify_secret:
-            print("[~] Spotify credentials not specified or could not set")
+            print("[~] Spotify credentials not specified or could not be set")
             
             # Request bearer token until valid
             while True:
