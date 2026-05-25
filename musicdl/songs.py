@@ -179,9 +179,7 @@ class Song:
         # Query youtube for /watch?v= URL
         # Return FailedSongDownloadError if download failed for any reason
 
-        print(1) 
         if self.url_type == "spotify-song":
-            print(2)
             if not bearer_token:
                 return FailedSongDownloadError("Failed getting spotify metadata: Bearer token invalid or missing")
 
