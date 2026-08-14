@@ -87,7 +87,7 @@ class MusicList:
         Returns:
             out (dict): Dictionary with title and url items
         """
-        PATTERN = re.compile(r"((?:https?:\/\/)?(?:www\.)?[-a-zA-Z0-9@%._\+~#=]{2,256}\.[a-z]{2,6}\b(?:[-a-zA-Z0-9@:%_\+.~#?&\/=]*))(?: (.+))?")
+        PATTERN = re.compile(r"((?:https?:\/\/)?(?:www\.)?[-a-zA-Z0-9@%._\+~#=]{2,256}\.[a-z]{2,6}\b(?:[-a-zA-Z0-9@:%_\+.~#?&\/=]*))(?: (.+))")
         
         # Checks if line is formatted URL TITLE
         is_formatted = PATTERN.match(line)
