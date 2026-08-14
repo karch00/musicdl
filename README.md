@@ -1,6 +1,6 @@
 # MusicDL
 
-> [!WARN Disclaimer]
+> [!WARNING Disclaimer]
 > This is a personal project of mine curated to my tastes, needs and wants.
 > Consider it unefficient, bloated or feature lacking at your own preference.
 
