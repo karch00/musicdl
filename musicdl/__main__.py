@@ -8,6 +8,7 @@ from requests import Session
 from musicdl.fileparse import MusicList
 from musicdl.songs import *
 from musicdl.constants import *
+from random import uniform
 
 def signal_handler(sig, frame):
     """
@@ -16,7 +17,7 @@ def signal_handler(sig, frame):
     print("\n[~] Interrupting downloads")
     os.kill(os.getpid(), signal.SIGTERM)
 
-def download_song_wrapper(song_to_process: dict) -> None:
+def download_song_wrapper(song_to_process: dict, retries) -> None:
     """
     Download song wrapper
 
@@ -45,10 +46,26 @@ def download_song_wrapper(song_to_process: dict) -> None:
 
     # Download song
     print(f"[+] Downloading song {song_idx}/{song_count}:\n\t- URL: {url}\n\t- Title: {title}\n\t- Artist: {artist}\n\t- Album: {album}\n\t- Cover: {cover}\n\t- Track: {track}\n\t- Genre: {genre}\n\t- Year: {year}")
-    res = song.download_song(output_path, song_format, session, verbose, bearer_token) # Add bearer token when spotify is set up
-    if isinstance(res, FailedSongDownloadError):
-        print(f"[-] Failed downloading song: {res.message}")
-        return
+    while True:
+        res = song.download_song(output_path, song_format, session, verbose, bearer_token) # Add bearer token when spotify is set up
+        # Retry if any error
+        if isinstance(res, FailedSongDownloadError):
+            print(f"[-] Failed downloading song: {res.message}")
+            retries += 1
+
+            # Set bearer token to None and url_type to youtube to indicate URL has been succesfully transformed into youtube
+            bearer_token = None 
+            song.url_type = "youtube-song"
+
+            if retries < 3:
+                time_to_sleep = uniform(25, 35)
+                print(f"[-] Retrying in {round(time_to_sleep, 2)}s, retry #{retries}")
+                sleep(time_to_sleep)
+            else:
+                print(f"[-] Max retries exceeded, song [{title}] failed to download")
+                return
+        else:
+            break
     
     # Download cover if present
     print(f"[+] Downloading cover...")
@@ -66,7 +83,9 @@ def download_song_wrapper(song_to_process: dict) -> None:
     print(f"[+] Finished processing song {song_idx}\n")
 
     # Sleep
-    sleep(10)
+    time_to_sleep = uniform(10, 20)
+    print(f"Waiting {round(time_to_sleep, 2)}s")
+    sleep(time_to_sleep)
 
 def get_bearer_token(session: Session, client_id: str, client_secret: str) -> dict | None:
     """
@@ -191,7 +210,7 @@ def main():
     
     # Start song processing
     for song in songs_to_process:
-        download_song_wrapper(song)
+        download_song_wrapper(song, 0)
 
 if __name__ == "__main__":
     main()
