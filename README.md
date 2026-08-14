@@ -83,6 +83,8 @@ If using spotify links, a .env file with the `ID` and `SECRET` of a spotify app 
 musicdl -f flac|mp3 -s /path/to/.env -o /directory/to/download/songs songs_file
 ```
 
+By default the format will be `mp3` and the output directory will be `./music`.
+
 **Additional flags:** `-v` for yt-dlp verbosity and `-h` for help 
 
 ## Requirements
