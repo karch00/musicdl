@@ -210,7 +210,7 @@ class Song:
             "postprocessors": [{
                 "key": "FFmpegExtractAudio",
                 "preferredcodec": song_format,
-                "preferredquality": "192" if song_format == "mp3" else "0",
+                "preferredquality": "320" if song_format == "mp3" else "0",
             }],
             "outtmpl": f"{output_path}/{self.title.replace(' ', '_')}",
             "quiet": not verbose,

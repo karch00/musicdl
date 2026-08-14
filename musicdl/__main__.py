@@ -2,7 +2,6 @@ import argparse
 import os
 import signal
 from dotenv import load_dotenv
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from time import sleep
 from requests import Session
@@ -19,10 +18,10 @@ def signal_handler(sig, frame):
 
 def download_song_wrapper(song_to_process: dict) -> None:
     """
-    Download song wrapper for multithreading implementation
+    Download song wrapper
 
     Args:
-        song_to_process (dict): Song containing all info required for multithreaded processing
+        song_to_process (dict): Song containing all info required
     """
     # Variable init
     bearer_token: str = song_to_process["bearer_token"]
@@ -67,7 +66,7 @@ def download_song_wrapper(song_to_process: dict) -> None:
     print(f"[+] Finished processing song {song_idx}\n")
 
     # Sleep
-    sleep(5)
+    sleep(10)
 
 def get_bearer_token(session: Session, client_id: str, client_secret: str) -> dict | None:
     """
@@ -191,8 +190,8 @@ def main():
         })
     
     # Start song processing
-    with ThreadPoolExecutor(max_workers=4) as executor:
-        executor.map(download_song_wrapper, songs_to_process)
+    for song in songs_to_process:
+        download_song_wrapper(song)
 
 if __name__ == "__main__":
     main()
